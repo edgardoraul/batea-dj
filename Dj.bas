@@ -59,9 +59,6 @@ Attribute GenerarTablaDesdeCarpeta.VB_ProcData.VB_Invoke_Func = "K\n14"
     Call darFormato
     ' Guardar archivo en la misma carpeta con el nombre de la carpeta y extensiÃ³n .xlsx
     wb.SaveAs folderPath & "\" & nombre & ".xlsx", FileFormat:=xlWorkbookDefault
-    
-    ' Dar formato: Centra el titular y formatea para imprimir la etiqueta.
-    ' TodavÃ­a en desarrollo.
 
 End Sub
 
@@ -137,13 +134,17 @@ Sub darFormato()
     Debug.Print color
     
     'Da formato de impresión
+    With Range("A1").CurrentRegion
+        .Font.Size = 14
+    End With
+
     With Range("A1")
         .Borders(xlEdgeTop).color = gris
         .Font.Size = 20
         .Font.Bold = True
         .Font.color = color
         .HorizontalAlignment = xlCenter
-        .EntireColumn.ColumnWidth = 47
+        .EntireColumn.ColumnWidth = 44
         .EntireColumn.WrapText = True
     End With
     Cells(Rows.Count, 1).End(xlUp).Offset(1, 0).Borders(xlEdgeBottom).color = gris
@@ -182,7 +183,7 @@ Sub FormatoImpresion()
     End With
 
     ' Ajustar el ancho de las columnas para que se ajusten al ancho de 15 cm
-    AjustarAnchoColumna ws, 47
+    AjustarAnchoColumna ws, 44
 
     ' Previsualizar la impresión
     'ws.PrintPreview
