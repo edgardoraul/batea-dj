@@ -1,213 +1,246 @@
-Attribute VB_Name = "Dj"
+Attribute VB_Name = "DJ"
 Option Explicit
-Public verde As Variant
-Public azul As Variant
-Public fucsia As Variant
-Public naranja As Variant
-Public marron As Variant
-Public gris As Variant
 
+' Constante para definir el ancho de la impresión en centímetros
+Const ANCHO_IMPRESION_CM As Double = 12
 
-
-
-Sub GenerarTablaDesdeCarpeta()
-Attribute GenerarTablaDesdeCarpeta.VB_ProcData.VB_Invoke_Func = "K\n14"
-
-    ' Genera un archivo excel cuyo contenido, es el listado de temas que tiene la carpeta donde se encuentra.
-    Dim dlg As FileDialog
-    Dim folderPath As String
-    Dim fileName As String
-    Dim wb As Workbook
+Sub GenerarRotuloCD()
+    Dim fd As FileDialog
+    Dim folderPath As String, folderName As String, genrePart As String
+    Dim fileName As String, cleanName As String, savePath As String
+    Dim cleanNameFormatted As String
+    Dim colorVal As Long
     Dim ws As Worksheet
-    Dim fileCount As Integer
-    Dim i As Integer
-    Dim nombre As String
+    Dim r As Long, i As Long, lastSongRow As Long, endRow As Long, dotPos As Long
+    Dim ptsTarget As Double, ptsA As Double, ptsC As Double, ptsBTarget As Double
+    Dim rngLabel As Range
+    Dim shpFrame As Shape, shp As Shape
+
+    ' 1. Seleccionar carpeta mediante cuadro de diálogo
+    Set fd = Application.FileDialog(msoFileDialogFolderPicker)
+    fd.Title = "Seleccione la carpeta del CD"
+    If fd.Show <> -1 Then Exit Sub
+    folderPath = fd.SelectedItems(1)
     
-    ' Seleccionar carpeta con el cuadro de diÃ¡logo
-    Set dlg = Application.FileDialog(msoFileDialogFolderPicker)
+    folderName = Mid(folderPath, InStrRev(folderPath, "\") + 1)
     
-    If dlg.Show = -1 Then
-        folderPath = dlg.SelectedItems(1)
+    ' 2. Evaluar tipo de música a partir del 6º caracter
+    If Len(folderName) >= 6 Then
+        genrePart = UCase(Mid(folderName, 6))
     Else
-        MsgBox "Elegí una carpeta, por favor! Caramba!.", vbExclamation
-        folderPath = dlg.SelectedItems(1)
+        genrePart = UCase(folderName)
     End If
     
-    
-    nombre = Right(dlg.SelectedItems(1), Len(dlg.SelectedItems(1)) - Len(dlg.InitialFileName))
-    Debug.Print nombre
-    
-    ' Crear nuevo libro de trabajo
-    Set wb = Workbooks.Add
-    Set ws = wb.Sheets(1)
-    
-    ' Establecer tÃ­tulo de la carpeta en A1
-    ws.Range("A1").Value = nombre
-    
-    ' Enumerar archivos en la carpeta
-    fileName = Dir(folderPath & "\*")
-    fileCount = 2 ' Empezamos desde la fila 2
-    
-    Do While fileName <> ""
-        ' AÃ±adir nombre del archivo a la tabla sin extensiÃ³n
-        ws.Cells(fileCount, 1).Value = Left(fileName, InStrRev(fileName, ".") - 1)
-        fileCount = fileCount + 1
-        fileName = Dir
-    Loop
-    
-    ' Dar formato
-    Call darFormato
-    ' Guardar archivo en la misma carpeta con el nombre de la carpeta y extensiÃ³n .xlsx
-    wb.SaveAs folderPath & "\" & nombre & ".xlsx", FileFormat:=xlWorkbookDefault
-
-End Sub
-
-Sub darFormato()
-    ' Colores
-    verde = RGB(60, 120, 62)
-    azul = RGB(49, 119, 203)
-    fucsia = RGB(230, 70, 219)
-    naranja = RGB(228, 109, 10)
-    marron = RGB(132, 108, 60)
-    gris = RGB(145, 135, 125)
-    
-    Dim color As String
-    Dim estilo As String
-    Dim Pregunta As String
-
-    Dim seleccion As String
-    Dim opciones As String
-    Dim resultado As Byte
-    
-    ' Definir las opciones con sus respectivos números
-    opciones = "1. Deep House" & vbCrLf & _
-               "2. Progressive House" & vbCrLf & _
-               "3. Progressive" & vbCrLf & _
-               "4. Trance" & vbCrLf & _
-               "5. House" & vbCrLf & _
-               "6. Acid Jazz"
-    
-    ' Mostrar el cuadro de diálogo con las opciones
-    seleccion = InputBox("¿Qué estilo es? (ingresa el número correspondiente):" & vbCrLf & vbCrLf & opciones, "Opciones")
-    
-    ' Verificar si el usuario hizo clic en Cancelar o no ingresó nada
-    If seleccion = "" Then
-        MsgBox "No se seleccionó ninguna opción.", vbInformation
+    ' Asignación de COLOR
+    If InStr(genrePart, "DEEP HOUSE") > 0 Then
+        colorVal = RGB(0, 176, 80)      ' Verde
+    ElseIf InStr(genrePart, "PROGRESSIVE HOUSE") > 0 Then
+        colorVal = RGB(255, 127, 0)    ' Naranja
+    ElseIf InStr(genrePart, "PROGRESSIVE") > 0 Then
+        colorVal = RGB(20, 20, 255)     ' Azul
+    ElseIf InStr(genrePart, "TRANCE") > 0 Then
+        colorVal = RGB(255, 20, 255)    ' Magenta
+    ElseIf InStr(genrePart, "ACID JAZZ") > 0 Then
+        colorVal = RGB(0, 0, 0)        ' Negro
+    ElseIf InStr(genrePart, "HOUSE") > 0 Then
+        colorVal = RGB(139, 69, 19)    ' Marrón
+    Else
+        colorVal = RGB(128, 128, 128)  ' Gris
     End If
-    
-    ' Determinar la opción seleccionada
-    Select Case seleccion
-        Case "1"
-            resultado = 1
-        Case "2"
-            resultado = 2
-        Case "3"
-            resultado = 3
-        Case "4"
-            resultado = 4
-        Case "5"
-            resultado = 5
-        Case "6"
-            resultado = 6
-        Case Else
-            MsgBox "Selección inválida. Por favor, ingresa un número del 1 al 6.", vbExclamation
-    End Select
 
+    Set ws = ActiveSheet
+    ws.Cells.Clear
     
-    Select Case resultado
-        Case 1
-            color = verde
-        Case 2
-            color = marron
-        Case 3
-            color = naranja
-        Case 4
-            color = fucsia
-        Case 5
-            color = azul
-        Case 6
-            color = gris
-        Case Else
-            MsgBox "No hay color"
-    End Select
-    
-    Debug.Print color
-    
-    'Da formato de impresión
-    With Range("A1").CurrentRegion
-        .Font.Size = 14
+    ' Limpiar formas preexistentes
+    For Each shp In ws.Shapes
+        shp.Delete
+    Next shp
+
+    ' 3. Fuente por defecto
+    With ws.Cells.Font
+        .Name = "Consolas"
+        .Size = 14
     End With
 
-    With Range("A1")
-        .Borders(xlEdgeTop).color = gris
+    ' 4. Ancho de columnas A y C = 3, y ajuste dinámico de columna B
+    ws.Columns("A").ColumnWidth = 3
+    ws.Columns("C").ColumnWidth = 3
+    
+    ptsTarget = Application.CentimetersToPoints(ANCHO_IMPRESION_CM)
+    ptsA = ws.Columns("A").Width
+    ptsC = ws.Columns("C").Width
+    ptsBTarget = ptsTarget - ptsA - ptsC
+    
+    If ptsBTarget > 0 Then
+        ws.Columns("B").ColumnWidth = 10
+        ws.Columns("B").ColumnWidth = ws.Columns("B").ColumnWidth * (ptsBTarget / ws.Columns("B").Width)
+    End If
+
+    ' 5. Título en B2
+    With ws.Range("B2")
+        .Value = folderName
+        .Font.Name = "Arial"
         .Font.Size = 20
         .Font.Bold = True
-        .Font.color = color
+        .Font.color = colorVal
         .HorizontalAlignment = xlCenter
-        .EntireColumn.ColumnWidth = 44
-        .EntireColumn.WrapText = True
+        .WrapText = True
     End With
-    Cells(Rows.Count, 1).End(xlUp).Offset(1, 0).Borders(xlEdgeBottom).color = gris
 
-    Call FormatoImpresion
+    ' 6. Listado de archivos a partir de B4 (sin extensión)
+    r = 4
+    fileName = Dir(folderPath & "\*.*")
+    
+    Do While fileName <> ""
+        If Left(fileName, 2) <> "~$" And UCase(fileName) <> UCase(folderName & ".xlsm") And UCase(fileName) <> UCase(folderName & ".xlsx") Then
+            
+            dotPos = InStrRev(fileName, ".")
+            If dotPos > 1 Then
+                cleanName = Left(fileName, dotPos - 1)
+            Else
+                cleanName = fileName
+            End If
+            
+            ' Aplicar indentación de 4 espacios para líneas que continúan
+            cleanNameFormatted = FormatearConIndentacion(cleanName, ptsBTarget)
+            
+            With ws.Cells(r, 2)
+                .Value = cleanNameFormatted
+                .WrapText = True
+                
+                ' Colorear y fijar tamaño 14 a los primeros caracteres (número de tema)
+                If Len(cleanNameFormatted) >= 3 Then
+                    With .Characters(1, 3).Font
+                        .color = colorVal
+                        .Size = 14
+                        .Bold = True
+                    End With
+                Else
+                    With .Characters(1, Len(cleanNameFormatted)).Font
+                        .color = colorVal
+                        .Size = 14
+                    End With
+                End If
+                
+                With .Borders(xlEdgeBottom)
+                    .LineStyle = xlContinuous
+                    .color = RGB(210, 210, 210)
+                    .Weight = xlThin
+                End With
+            End With
+            
+            r = r + 1
+        End If
+        fileName = Dir
+    Loop
 
-End Sub
+    lastSongRow = r - 1
 
-Sub FormatoImpresion()
-    Dim ws As Worksheet
-    Dim ultimaFila As Long
-    Dim rangoImpresion As Range
+    ' Quitar borde inferior al último archivo
+    If lastSongRow >= 4 Then
+        ws.Cells(lastSongRow, 2).Borders(xlEdgeBottom).LineStyle = xlNone
+    End If
 
-    ' Establecer la hoja de trabajo activa
-    Set ws = ActiveSheet
+    ' Ajuste de altura de filas de archivos (mínimo 25)
+    For i = 4 To lastSongRow
+        ws.Rows(i).AutoFit
+        If ws.Rows(i).RowHeight < 25 Then ws.Rows(i).RowHeight = 25
+    Next i
 
-    ' Encontrar la última fila con datos
-    ultimaFila = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    ' Fila límite del marco (última con archivo + 2)
+    If lastSongRow >= 4 Then
+        endRow = lastSongRow + 2
+    Else
+        endRow = 5
+    End If
 
-    ' Definir el rango de impresión incluyendo una fila adicional
-    Set rangoImpresion = ws.Range(ws.Cells(1, 1), ws.Cells(ultimaFila + 1, ws.UsedRange.Columns.Count))
+    ws.Rows(endRow - 1).RowHeight = 15
+    ws.Rows(endRow).RowHeight = 15
+    ws.Rows(1).RowHeight = 12
+    ws.Rows(3).RowHeight = 12
 
-    ' Establecer el rango de impresión
-    ws.PageSetup.PrintArea = rangoImpresion.Address
+    ' 7. Insertar marco rectangular con esquinas inferiores redondeadas
+    Set rngLabel = ws.Range(ws.Cells(1, 1), ws.Cells(endRow, 3))
+    
+    Set shpFrame = ws.Shapes.AddShape(msoShapeRound2SameRectangle, _
+                                      rngLabel.Left, rngLabel.Top, _
+                                      rngLabel.Width, rngLabel.Height)
+    With shpFrame
+        .Rotation = 180 ' Invierte la forma para que las curvas queden abajo
+        .Fill.Visible = msoFalse
+        With .Line
+            .DashStyle = msoLineDash
+            .ForeColor.RGB = colorVal
+            .Weight = 1
+        End With
+    End With
 
-    ' Configurar el ancho de la hoja
+    ' 8. Configurar impresión con márgenes en 0
     With ws.PageSetup
-        .PaperSize = xlPaperA4
-        .Orientation = xlPortrait
+        .LeftHeader = ""
+        .CenterHeader = ""
+        .RightHeader = ""
+        .LeftFooter = ""
+        .CenterFooter = ""
+        .RightFooter = ""
+        .LeftMargin = 0
+        .RightMargin = 0
+        .TopMargin = 0
+        .BottomMargin = 0
+        .PrintArea = rngLabel.Address
         .FitToPagesWide = 1
         .FitToPagesTall = False
-        .LeftMargin = Application.CentimetersToPoints(1)
-        .RightMargin = Application.CentimetersToPoints(1)
-        .TopMargin = Application.CentimetersToPoints(1)
-        .BottomMargin = Application.CentimetersToPoints(1)
+        .Zoom = False
     End With
 
-    ' Ajustar el ancho de las columnas para que se ajusten al ancho de 15 cm
-    AjustarAnchoColumna ws, 44
+    ' 9. Guardar libro como .xlsx
+    savePath = folderPath & "\" & folderName & ".xlsx"
+    Application.DisplayAlerts = False
+    ActiveWorkbook.SaveAs fileName:=savePath, FileFormat:=xlOpenXMLWorkbook
+    Application.DisplayAlerts = True
 
-    ' Previsualizar la impresión
-    'ws.PrintPreview
+    MsgBox "Rótulo generado correctamente en:" & vbCrLf & savePath, vbInformation, "Listo"
 End Sub
 
-Sub AjustarAnchoColumna(ws As Worksheet, anchoTotalCm As Double)
-    Dim columna As Range
-    Dim totalAnchoPuntos As Double
-    Dim anchoCmPorPunto As Double
-    Dim factorAjuste As Double
-    Dim i As Integer
+' Función auxiliar para dividir el texto según el ancho e indentar las líneas siguientes
+Private Function FormatearConIndentacion(ByVal texto As String, ByVal anchoPuntos As Double) As String
+    Dim palabras() As String
+    Dim i As Long
+    Dim lineaActual As String, resultado As String
+    Dim maxCharsLinea1 As Long, maxCharsSiguientes As Long
+    Dim limite As Long
+    Dim esPrimeraLinea As Boolean
     
-    ' Calcular el ancho total en puntos
-    totalAnchoPuntos = 0
-    For i = 1 To ws.UsedRange.Columns.Count
-        totalAnchoPuntos = totalAnchoPuntos + ws.Columns(i).ColumnWidth
+    ' Consolas 14pt tiene un ancho de ~8.4 puntos por carácter + margen interno de celda (~6 pt)
+    maxCharsLinea1 = Fix((anchoPuntos - 6) / 8.4)
+    If maxCharsLinea1 < 10 Then maxCharsLinea1 = 10
+    maxCharsSiguientes = maxCharsLinea1 - 4
+    If maxCharsSiguientes < 5 Then maxCharsSiguientes = 5
+    
+    palabras = Split(texto, " ")
+    esPrimeraLinea = True
+    limite = maxCharsLinea1
+    lineaActual = ""
+    
+    For i = LBound(palabras) To UBound(palabras)
+        If Len(lineaActual) = 0 Then
+            lineaActual = palabras(i)
+        ElseIf Len(lineaActual) + 1 + Len(palabras(i)) <= limite Then
+            lineaActual = lineaActual & " " & palabras(i)
+        Else
+            If resultado <> "" Then resultado = resultado & vbLf
+            resultado = resultado & IIf(esPrimeraLinea, lineaActual, "    " & lineaActual)
+            esPrimeraLinea = False
+            limite = maxCharsSiguientes
+            lineaActual = palabras(i)
+        End If
     Next i
-
-    ' Calcular el factor de ajuste
-    anchoCmPorPunto = anchoTotalCm / totalAnchoPuntos
-
-    ' Ajustar el ancho de cada columna
-    For i = 1 To ws.UsedRange.Columns.Count
-        ws.Columns(i).ColumnWidth = ws.Columns(i).ColumnWidth * anchoCmPorPunto
-    Next i
-End Sub
+    
+    If Len(lineaActual) > 0 Then
+        If resultado <> "" Then resultado = resultado & vbLf
+        resultado = resultado & IIf(esPrimeraLinea, lineaActual, "    " & lineaActual)
+    End If
+    
+    FormatearConIndentacion = resultado
+End Function
 
