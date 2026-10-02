@@ -29,7 +29,7 @@ Attribute GenerarTablaDesdeCarpeta.VB_ProcData.VB_Invoke_Func = "K\n14"
     If dlg.Show = -1 Then
         folderPath = dlg.SelectedItems(1)
     Else
-        MsgBox "ElegÃ­ una carpeta, por favor! Caramba!.", vbExclamation
+        MsgBox "Elegí una carpeta, por favor! Caramba!.", vbExclamation
         folderPath = dlg.SelectedItems(1)
     End If
     
@@ -143,7 +143,7 @@ Sub darFormato()
         .Font.Bold = True
         .Font.color = color
         .HorizontalAlignment = xlCenter
-        .EntireColumn.ColumnWidth = 40
+        .EntireColumn.ColumnWidth = 47
         .EntireColumn.WrapText = True
     End With
     Cells(Rows.Count, 1).End(xlUp).Offset(1, 0).Borders(xlEdgeBottom).color = gris
@@ -182,7 +182,7 @@ Sub FormatoImpresion()
     End With
 
     ' Ajustar el ancho de las columnas para que se ajusten al ancho de 15 cm
-    AjustarAnchoColumna ws, 40
+    AjustarAnchoColumna ws, 47
 
     ' Previsualizar la impresión
     'ws.PrintPreview
