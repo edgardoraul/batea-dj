@@ -5,6 +5,7 @@ Option Explicit
 Const ANCHO_IMPRESION_CM As Double = 12
 
 Sub GenerarRotuloCD()
+Attribute GenerarRotuloCD.VB_ProcData.VB_Invoke_Func = "K\n14"
     Dim fd As FileDialog
     Dim folderPath As String, folderName As String, genrePart As String
     Dim fileName As String, cleanName As String, savePath As String
@@ -59,7 +60,7 @@ Sub GenerarRotuloCD()
     ' 3. Fuente por defecto
     With ws.Cells.Font
         .Name = "Consolas"
-        .Size = 14
+        .Size = 12
     End With
 
     ' 4. Ancho de columnas A y C = 3, y ajuste dinámico de columna B
@@ -101,24 +102,23 @@ Sub GenerarRotuloCD()
                 cleanName = fileName
             End If
             
-            ' Aplicar indentación de 4 espacios para líneas que continúan
-            cleanNameFormatted = FormatearConIndentacion(cleanName, ptsBTarget)
+            ' Formatear controlando el salto manual exactamente a los 41 caracteres e indentando
+            cleanNameFormatted = FormatearConIndentacion(cleanName)
             
             With ws.Cells(r, 2)
                 .Value = cleanNameFormatted
                 .WrapText = True
+                .VerticalAlignment = xlCenter
                 
-                ' Colorear y fijar tamaño 14 a los primeros caracteres (número de tema)
+                ' Colorear y fijar formato a los primeros caracteres (número de tema)
                 If Len(cleanNameFormatted) >= 3 Then
                     With .Characters(1, 3).Font
                         .color = colorVal
-                        .Size = 14
-                        .Bold = True
+                        '.Bold = True
                     End With
                 Else
                     With .Characters(1, Len(cleanNameFormatted)).Font
                         .color = colorVal
-                        .Size = 14
                     End With
                 End If
                 
@@ -154,10 +154,10 @@ Sub GenerarRotuloCD()
         endRow = 5
     End If
 
-    ws.Rows(endRow - 1).RowHeight = 15
-    ws.Rows(endRow).RowHeight = 15
-    ws.Rows(1).RowHeight = 12
-    ws.Rows(3).RowHeight = 12
+    ws.Rows(endRow - 1).RowHeight = 14
+    ws.Rows(endRow).RowHeight = 14
+    ws.Rows(1).RowHeight = 10
+    ws.Rows(3).RowHeight = 10
 
     ' 7. Insertar marco rectangular con esquinas inferiores redondeadas
     Set rngLabel = ws.Range(ws.Cells(1, 1), ws.Cells(endRow, 3))
@@ -202,43 +202,49 @@ Sub GenerarRotuloCD()
     MsgBox "Rótulo generado correctamente en:" & vbCrLf & savePath, vbInformation, "Listo"
 End Sub
 
-' Función auxiliar para dividir el texto según el ancho e indentar las líneas siguientes
-Private Function FormatearConIndentacion(ByVal texto As String, ByVal anchoPuntos As Double) As String
+' Función auxiliar para dividir palabras respetando el límite de 41 caracteres por línea e indentar con 4 espacios
+Private Function FormatearConIndentacion(ByVal texto As String) As String
     Dim palabras() As String
     Dim i As Long
     Dim lineaActual As String, resultado As String
-    Dim maxCharsLinea1 As Long, maxCharsSiguientes As Long
-    Dim limite As Long
     Dim esPrimeraLinea As Boolean
-    
-    ' Consolas 14pt tiene un ancho de ~8.4 puntos por carácter + margen interno de celda (~6 pt)
-    maxCharsLinea1 = Fix((anchoPuntos - 6) / 8.4)
-    If maxCharsLinea1 < 10 Then maxCharsLinea1 = 10
-    maxCharsSiguientes = maxCharsLinea1 - 4
-    If maxCharsSiguientes < 5 Then maxCharsSiguientes = 5
+    Dim limite As Long
+    Const MAX_CHARS As Long = 41
     
     palabras = Split(texto, " ")
     esPrimeraLinea = True
-    limite = maxCharsLinea1
     lineaActual = ""
     
     For i = LBound(palabras) To UBound(palabras)
+        If esPrimeraLinea Then
+            limite = MAX_CHARS
+        Else
+            limite = MAX_CHARS - 4 ' 37 caracteres legibles para sumar los 4 espacios de sangría y dar exactamente 41
+        End If
+        
         If Len(lineaActual) = 0 Then
             lineaActual = palabras(i)
         ElseIf Len(lineaActual) + 1 + Len(palabras(i)) <= limite Then
             lineaActual = lineaActual & " " & palabras(i)
         Else
             If resultado <> "" Then resultado = resultado & vbLf
-            resultado = resultado & IIf(esPrimeraLinea, lineaActual, "    " & lineaActual)
-            esPrimeraLinea = False
-            limite = maxCharsSiguientes
+            If esPrimeraLinea Then
+                resultado = resultado & lineaActual
+                esPrimeraLinea = False
+            Else
+                resultado = resultado & "    " & lineaActual
+            End If
             lineaActual = palabras(i)
         End If
     Next i
     
     If Len(lineaActual) > 0 Then
         If resultado <> "" Then resultado = resultado & vbLf
-        resultado = resultado & IIf(esPrimeraLinea, lineaActual, "    " & lineaActual)
+        If esPrimeraLinea Then
+            resultado = resultado & lineaActual
+        Else
+            resultado = resultado & "    " & lineaActual
+        End If
     End If
     
     FormatearConIndentacion = resultado
